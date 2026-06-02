@@ -42,24 +42,27 @@ A leading Canadian alcoholic beverages brand receives raw sales and order data f
 └─────────────────────────────────────────┘
 
 ## 📁 Repository Structure
+
+```
 snowflake-data-quality-project/
 │
 ├── README.md
 │
 ├── sql/
 │   ├── 01_DDL.sql                  ← Create RAW_CUSTOMERS, RAW_PRODUCTS, RAW_ORDERS
-│   ├── 02_Insert.sql               ← rows with seeded data quality errors
+│   ├── 02_Insert.sql               ← Seed data with intentional quality errors
 │   ├── 03_Data_Profiling.sql       ← Null counts, duplicates, ranges, patterns, FK checks
-│   ├── 04_Data_Quality_Rules.sql   ← DQ views with row-level PASS/FAIL flags
+│   ├── 04_Data_Quality_Rules.sql   ← DQ views with row-level PASS / FAIL flags
 │   ├── 05_Metrics.sql              ← DQ_METRICS_LOG table + stored procedure
 │   ├── 06_Dashboard_Queries.sql    ← Snowflake dashboard tile queries
 │   └── 07_Tasks.sql                ← Nightly automation via Snowflake Tasks
 │
 ├── docs/
-│   └── architecture_diagram.png   ← Pipeline architecture visual
+│   └── architecture_diagram.png   ← End-to-end pipeline architecture visual
 │
 └── assets/
     └── dashboard_screenshot.png   ← Snowflake dashboard screenshot (optional)
+```
 
 ## 🧱 Data Model
 ## Schema Reference
@@ -120,15 +123,25 @@ snowflake-data-quality-project/
 ## ⚙️ How to Run This Project
 Prerequisites
 A Snowflake account (free trial works)
+
 Access to a Snowflake Worksheet
 
 ## Execution Order
-Run the SQL files in order, one at a time:
-Step 1 →  01_DDL.sql                 Create the database, schema, and 3 raw tables
-Step 2 →  02_Insert.sql              Load ~1,000 rows with seeded errors
-Step 3 →  03_Data_Profiling.sql      Run profiling queries — read the output carefully
-Step 4 →  04_Data_Quality_Rules.sql  Create the 3 DQ views (rules engine)
-Step 5 →  05_Metrics.sql             Create DQ_METRICS_LOG table and stored procedure,
-                                     then call: CALL SP_CALCULATE_DQ_METRICS();
-Step 6 →  06_Dashboard_Queries.sql   Run in Snowflake Dashboards — one query per tile
-Step 7 →  07_Tasks.sql               Create and resume the nightly automation task
+## Setup
+
+Run the SQL files in order, one at a time.
+
+| Step | File | Description |
+|------|------|-------------|
+| 1 | `01_DDL.sql` | Create the database, schema, and 3 raw tables |
+| 2 | `02_Insert.sql` | Load ~1,000 rows with seeded errors |
+| 3 | `03_Data_Profiling.sql` | Run profiling queries — review the output before proceeding |
+| 4 | `04_Data_Quality_Rules.sql` | Create the 3 DQ views (rules engine) with row-level PASS / FAIL flags |
+| 5 | `05_Metrics.sql` | Create `DQ_METRICS_LOG` table and stored procedure, then call it manually once |
+| 6 | `06_Dashboard_Queries.sql` | Run in Snowflake Dashboards — one query per tile |
+| 7 | `07_Tasks.sql` | Create and resume the nightly automation task |
+
+> **Step 5 note:** After running `05_Metrics.sql`, execute the procedure once to populate the log:
+> ```sql
+> CALL SP_CALCULATE_DQ_METRICS();
+> ```
