@@ -1,0 +1,21 @@
+
+-- Create the scheduled task
+
+CREATE OR REPLACE TASK TASK_NIGHTLY_DQ_METRICS
+    WAREHOUSE = COMPUTE_WH          
+    SCHEDULE  = 'USING CRON 0 2 * * * UTC'
+AS
+    CALL SP_CALCULATE_DQ_METRICS();
+
+-- resume Task
+ALTER TASK TASK_NIGHTLY_DQ_METRICS RESUME;
+
+
+-- Verifying the task is scheduled
+
+SHOW TASKS LIKE 'TASK_NIGHTLY_DQ_METRICS';
+
+
+-- Trigerring the Task
+EXECUTE TASK TASK_NIGHTLY_DQ_METRICS;
+

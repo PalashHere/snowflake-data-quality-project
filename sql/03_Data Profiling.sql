@@ -1,0 +1,154 @@
+-- How many NULLs or blanks in each critical column?
+
+SELECT
+    'RAW_CUSTOMERS'                                                AS table_name,
+    COUNT(*)                                                       AS total_rows,
+    SUM(CASE WHEN CUSTOMER_ID     IS NULL OR TRIM(CUSTOMER_ID)    = '' THEN 1 ELSE 0 END) AS null_customer_id,
+    SUM(CASE WHEN FIRST_NAME      IS NULL OR TRIM(FIRST_NAME)     = '' THEN 1 ELSE 0 END) AS null_first_name,
+    SUM(CASE WHEN LAST_NAME       IS NULL OR TRIM(LAST_NAME)      = '' THEN 1 ELSE 0 END) AS null_last_name,
+    SUM(CASE WHEN EMAIL           IS NULL OR TRIM(EMAIL)          = '' THEN 1 ELSE 0 END) AS null_email,
+    SUM(CASE WHEN PHONE           IS NULL OR TRIM(PHONE)          = '' THEN 1 ELSE 0 END) AS null_phone,
+    SUM(CASE WHEN PROVINCE        IS NULL OR TRIM(PROVINCE)       = '' THEN 1 ELSE 0 END) AS null_province,
+    SUM(CASE WHEN DATE_OF_BIRTH   IS NULL OR TRIM(DATE_OF_BIRTH)  = '' THEN 1 ELSE 0 END) AS null_dob,
+    SUM(CASE WHEN ANNUAL_SPEND_CAD IS NULL OR TRIM(ANNUAL_SPEND_CAD) = '' THEN 1 ELSE 0 END) AS null_annual_spend
+FROM RAW_CUSTOMERS;
+
+
+-- How many NULLs or blanks in each critical column?
+SELECT
+    'RAW_ORDERS'                                                   AS table_name,
+    COUNT(*)                                                       AS total_rows,
+    SUM(CASE WHEN ORDER_ID        IS NULL OR TRIM(ORDER_ID)       = '' THEN 1 ELSE 0 END) AS null_order_id,
+    SUM(CASE WHEN CUSTOMER_ID     IS NULL OR TRIM(CUSTOMER_ID)    = '' THEN 1 ELSE 0 END) AS null_customer_id,
+    SUM(CASE WHEN PRODUCT_ID      IS NULL OR TRIM(PRODUCT_ID)     = '' THEN 1 ELSE 0 END) AS null_product_id,
+    SUM(CASE WHEN ORDER_DATE      IS NULL OR TRIM(ORDER_DATE)     = '' THEN 1 ELSE 0 END) AS null_order_date,
+    SUM(CASE WHEN QUANTITY        IS NULL OR TRIM(QUANTITY)       = '' THEN 1 ELSE 0 END) AS null_quantity,
+    SUM(CASE WHEN TOTAL_AMOUNT_CAD IS NULL OR TRIM(TOTAL_AMOUNT_CAD) = '' THEN 1 ELSE 0 END) AS null_total
+FROM RAW_ORDERS;
+
+
+
+--  UNIQUENESS PROFILE
+-- Which keys have duplicates?
+
+
+SELECT 'CUSTOMERS - duplicate IDs' AS check_name, CUSTOMER_ID, COUNT(*) AS cnt
+FROM RAW_CUSTOMERS
+GROUP BY CUSTOMER_ID
+HAVING COUNT(*) > 1
+ORDER BY cnt DESC;
+
+SELECT 'PRODUCTS - duplicate IDs' AS check_name, PRODUCT_ID, COUNT(*) AS cnt
+FROM RAW_PRODUCTS
+GROUP BY PRODUCT_ID
+HAVING COUNT(*) > 1
+ORDER BY cnt DESC;
+
+SELECT 'ORDERS - duplicate IDs' AS check_name, ORDER_ID, COUNT(*) AS cnt
+FROM RAW_ORDERS
+GROUP BY ORDER_ID
+HAVING COUNT(*) > 1
+ORDER BY cnt DESC;
+
+-- spot the outliers
+-- Are there non-numeric values in numeric columns?
+SELECT COUNT(*) AS non_numeric_spend
+FROM RAW_CUSTOMERS
+WHERE TRY_TO_NUMBER(ANNUAL_SPEND_CAD) IS NULL
+  AND ANNUAL_SPEND_CAD IS NOT NULL;
+
+SELECT COUNT(*) AS non_numeric_price
+FROM RAW_PRODUCTS
+WHERE TRY_TO_NUMBER(UNIT_PRICE_CAD) IS NULL
+  AND UNIT_PRICE_CAD IS NOT NULL;
+
+SELECT COUNT(*) AS non_numeric_qty
+FROM RAW_ORDERS
+WHERE TRY_TO_NUMBER(QUANTITY) IS NULL
+  AND QUANTITY IS NOT NULL;
+
+
+
+
+
+-- Numeric range checks
+SELECT MIN(TRY_TO_NUMBER(ANNUAL_SPEND_CAD)) AS min_spend,
+       MAX(TRY_TO_NUMBER(ANNUAL_SPEND_CAD)) AS max_spend,
+       AVG(TRY_TO_NUMBER(ANNUAL_SPEND_CAD)) AS avg_spend
+FROM RAW_CUSTOMERS
+WHERE TRY_TO_NUMBER(ANNUAL_SPEND_CAD) IS NOT NULL;
+
+SELECT MIN(TRY_TO_NUMBER(ALCOHOL_PCT)) AS min_alc,
+       MAX(TRY_TO_NUMBER(ALCOHOL_PCT)) AS max_alc
+FROM RAW_PRODUCTS
+WHERE TRY_TO_NUMBER(ALCOHOL_PCT) IS NOT NULL;
+
+SELECT MIN(TRY_TO_NUMBER(QUANTITY)) AS min_qty,
+       MAX(TRY_TO_NUMBER(QUANTITY)) AS max_qty
+FROM RAW_ORDERS
+WHERE TRY_TO_NUMBER(QUANTITY) IS NOT NULL;
+
+
+
+
+-- CARDINALITY & PATTERN PROFILE
+
+-- What PROVINCE values exist? 
+SELECT PROVINCE, COUNT(*) AS cnt
+FROM RAW_CUSTOMERS
+GROUP BY PROVINCE
+ORDER BY cnt DESC;
+
+-- What CATEGORY values exist in products?
+SELECT CATEGORY, COUNT(*) AS cnt
+FROM RAW_PRODUCTS
+GROUP BY CATEGORY
+ORDER BY cnt DESC;
+
+-- What STATUS values exist in orders?
+SELECT STATUS, COUNT(*) AS cnt
+FROM RAW_ORDERS
+GROUP BY STATUS
+ORDER BY cnt DESC;
+
+-- What CHANNEL values exist?
+SELECT CHANNEL, COUNT(*) AS cnt
+FROM RAW_ORDERS
+GROUP BY CHANNEL
+ORDER BY cnt DESC;
+
+-- What IS_ACTIVE values exist?
+SELECT IS_ACTIVE, COUNT(*) AS cnt
+FROM RAW_PRODUCTS
+GROUP BY IS_ACTIVE
+ORDER BY cnt DESC;
+
+-- Orders pointing to non-existent customers or products
+
+
+SELECT COUNT(*) AS orphan_count
+FROM RAW_ORDERS o
+LEFT JOIN RAW_CUSTOMERS c
+    ON o.CUSTOMER_ID = c.CUSTOMER_ID
+WHERE c.CUSTOMER_ID IS NULL;
+
+SELECT COUNT(*) AS orphan_count
+FROM RAW_ORDERS o
+LEFT JOIN RAW_PRODUCTS p
+    ON o.PRODUCT_ID = p.PRODUCT_ID
+WHERE p.PRODUCT_ID IS NULL;
+
+
+-- Dates in the future or impossibly old
+
+SELECT 'Future DOB' AS issue, COUNT(*) AS cnt
+FROM RAW_CUSTOMERS
+WHERE TRY_TO_DATE(DATE_OF_BIRTH) > CURRENT_DATE();
+
+SELECT 'Future ORDER_DATE' AS issue, COUNT(*) AS cnt
+FROM RAW_ORDERS
+WHERE TRY_TO_DATE(ORDER_DATE) > CURRENT_DATE();
+
+SELECT 'NULL ORDER_DATE' AS issue, COUNT(*) AS cnt
+FROM RAW_ORDERS
+WHERE ORDER_DATE IS NULL OR TRIM(ORDER_DATE) = '';
