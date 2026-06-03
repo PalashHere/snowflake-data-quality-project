@@ -1,7 +1,7 @@
 # snowflake-data-quality-project
 
 ## Data Quality Management System
-### Sales & Orders Domain — Canadian Alcoholic Beverages Brand
+### Sales & Orders Domain 
 
 ## 📌 Project Overview
 This project demonstrates a production-grade, end-to-end Data Quality Management System built entirely in Snowflake SQL — covering data ingestion, profiling, rule definition, metric logging, dashboard visualisation, and automated scheduling.
