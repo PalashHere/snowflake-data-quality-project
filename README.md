@@ -1,6 +1,6 @@
 # snowflake-data-quality-project
 
-## 🍁 Snowflake Data Quality Management System
+## Data Quality Management System
 ### Sales & Orders Domain — Canadian Alcoholic Beverages Brand
 
 ## 📌 Project Overview
